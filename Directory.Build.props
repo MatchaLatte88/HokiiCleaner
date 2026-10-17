@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!-- Ziel-Framework zentral: fuer .NET 10 nur diese Zeile aendern (net10.0-windows). -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

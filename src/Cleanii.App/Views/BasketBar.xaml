@@ -1,0 +1,160 @@
+<UserControl x:Class="Cleanii.App.Views.BasketBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="DimText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextDimBrush}" />
+        </Style>
+
+        <Style x:Key="Eyebrow" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDimBrush}" />
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Auswahlkorb: sammelt vorgemerkte Dateien und Ordner aus allen Ansichten; verschoben wird erst nach Bestaetigung -->
+    <Grid Margin="0,12,0,0" Visibility="{Binding Basket.IsVisible, Converter={StaticResource BoolToVis}}">
+        <ContentControl Style="{StaticResource GlassCard}" />
+        <StackPanel Margin="20,14">
+
+            <!-- Liste der vorgemerkten Eintraege -->
+            <Border Margin="0,0,0,12" MaxHeight="170"
+                    Visibility="{Binding Basket.IsListOpen, Converter={StaticResource BoolToVis}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Basket.Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel ToolTip="{Binding Path}">
+                                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding ParentPath}" Style="{StaticResource DimText}"
+                                                   FontSize="{StaticResource FontSizeCaption}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="16,0,10,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding SizeText}" TextAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                                        <TextBlock Text="{Binding DetailText}" Style="{StaticResource DimText}"
+                                                   FontSize="{StaticResource FontSizeCaption}" TextAlignment="Right" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Content="✕" Style="{StaticResource SecondaryButton}" Padding="9,3"
+                                            VerticalAlignment="Center" ToolTip="Aus der Auswahl nehmen"
+                                            Command="{Binding DataContext.Basket.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Hinweis, warum nichts verschoben wird -->
+            <Grid Margin="0,0,0,10" Visibility="{Binding Basket.HasBlocked, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Basket.BlockedText}" Foreground="{DynamicResource WarningBrush}" TextWrapping="Wrap" />
+                <Button Grid.Column="1" Content="Verstanden" Style="{StaticResource SecondaryButton}" Padding="12,5"
+                        Margin="16,0,0,0" VerticalAlignment="Top" Command="{Binding Basket.DismissBlockedCommand}" />
+            </Grid>
+
+            <!-- Ergebnis des letzten Verschiebens -->
+            <Grid Margin="0,0,0,12" Visibility="{Binding Basket.HasResult, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding Basket.ResultTitle}" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
+                    <TextBlock Text="{Binding Basket.ResultNote}" Style="{StaticResource DimText}" TextWrapping="Wrap"
+                               FontSize="{StaticResource FontSizeSmall}" Margin="0,2,0,0" />
+                    <ItemsControl ItemsSource="{Binding Basket.ResultLines}" Margin="0,4,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontSize="{StaticResource FontSizeSmall}" TextWrapping="Wrap" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,0,0,0">
+                    <Button Content="Papierkorb ansehen" Style="{StaticResource SecondaryButton}" Padding="12,5"
+                            Command="{Binding Basket.ShowBinCommand}" />
+                    <Button Content="Protokoll" Style="{StaticResource SecondaryButton}" Padding="12,5" Margin="8,0,0,0"
+                            Command="{Binding Basket.RevealLogCommand}" Visibility="{Binding Basket.HasLog, Converter={StaticResource BoolToVis}}" />
+                    <Button Content="Schließen" Style="{StaticResource SecondaryButton}" Padding="12,5" Margin="8,0,0,0"
+                            Command="{Binding Basket.DismissResultCommand}" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Auswahl: Summe und Aktionen -->
+            <Grid Visibility="{Binding Basket.ShowCollectBar, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="AUSWAHL FÜR DEN PAPIERKORB" Style="{StaticResource Eyebrow}" />
+                    <TextBlock Text="{Binding Basket.SummaryText}" FontWeight="SemiBold" Margin="0,2,0,0"
+                               Typography.NumeralAlignment="Tabular" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ToggleButton Content="Liste" Style="{StaticResource FilterChip}" Margin="0,0,8,0"
+                                  IsChecked="{Binding Basket.IsListOpen, Mode=TwoWay}"
+                                  ToolTip="Zeigt alle vorgemerkten Einträge" />
+                    <Button Content="Leeren" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                            Command="{Binding Basket.ClearCommand}" ToolTip="Nimmt alles aus der Auswahl; es wird nichts verschoben" />
+                    <Button Content="In den Papierkorb …" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding Basket.RequestMoveCommand}"
+                            ToolTip="Prüft die Auswahl und fragt vor dem Verschieben nach" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Bestaetigung -->
+            <Grid Visibility="{Binding Basket.IsConfirming, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,24,0">
+                    <TextBlock Text="{Binding Basket.ConfirmTitle}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding Basket.ConfirmLines}" Margin="0,4,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Style="{StaticResource DimText}" TextWrapping="Wrap"
+                                           FontSize="{StaticResource FontSizeSmall}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Abbrechen" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0"
+                            Command="{Binding Basket.CancelConfirmCommand}" />
+                    <Button Content="In den Papierkorb verschieben" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding Basket.ConfirmCommand}" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Fortschritt -->
+            <Grid Visibility="{Binding Basket.IsMoving, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,24,0">
+                    <TextBlock Text="{Binding Basket.ProgressText}" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis" />
+                    <ProgressBar Style="{StaticResource ShareBar}" Margin="0,10,0,0" Maximum="1"
+                                 Value="{Binding Basket.ProgressFraction, Mode=OneWay}" Foreground="{DynamicResource AccentBrush}" />
+                </StackPanel>
+                <Button Grid.Column="1" Content="Abbrechen" Style="{StaticResource SecondaryButton}"
+                        Command="{Binding Basket.CancelMoveCommand}" />
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>

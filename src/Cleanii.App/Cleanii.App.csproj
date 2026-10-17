@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cleanii.Core\Cleanii.Core.csproj" />
+    <ProjectReference Include="..\Cleanii.Actions\Cleanii.Actions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,478 @@
+<title>Cleanii Sonar Stilwahl</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/*
+  Layout-Idee: eine Sonar-Oberfläche im Originalformat 1280 x 800, darüber ein Umschalter für fünf Stile.
+  Der Stil wird nur über data-style am Fenster gesteuert: Farben, Flächen, Rundung, Schrift und Effekte
+  kommen aus Variablen, einzelne Stile ergänzen eigene Regeln (Rahmen, Leuchten, Unschärfe).
+*/
+:root {
+  --page-bg: #0C0E11; --page-fg: #E6E8EB; --page-dim: #98A0AB; --page-line: #242A32; --page-chip: #161A20; --page-hi: #F2F3F5;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page-bg); color: var(--page-fg);
+  font: 400 15px/1.5 "Instrument Sans", system-ui, "Segoe UI", sans-serif;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+.top h1 { margin: 0; font: 600 26px/1.15 "Schibsted Grotesk", system-ui, sans-serif; letter-spacing: -.01em; text-wrap: balance; }
+.top p { margin: 6px 0 0; color: var(--page-dim); max-width: 66ch; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab {
+  appearance: none; border: 1px solid var(--page-line); background: var(--page-chip); color: var(--page-dim);
+  font: 600 13px/1 "Instrument Sans", system-ui, sans-serif; padding: 11px 16px; border-radius: 8px; cursor: pointer; display: flex; gap: 9px; align-items: center;
+}
+.tab:hover { color: var(--page-fg); }
+.tab[aria-selected="true"] { color: #0C0E11; background: var(--page-hi); border-color: var(--page-hi); }
+.tab:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.tab i { font: 500 11px/1 "JetBrains Mono", monospace; opacity: .7; font-style: normal; }
+.pitch { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px 36px; align-items: start; }
+.pitch h2 { margin: 0 0 4px; font: 600 19px/1.2 "Schibsted Grotesk", system-ui, sans-serif; }
+.pitch p { margin: 0; color: var(--page-dim); max-width: 64ch; }
+.levers { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.levers li { display: grid; grid-template-columns: 8px 1fr; gap: 12px; color: #C7CCD3; font-size: 14px; }
+.levers li::before { content: ""; width: 8px; height: 8px; margin-top: 7px; border-radius: 2px; background: var(--lever, #888); }
+.levers li.wpf { color: var(--page-dim); }
+.levers li.wpf b { color: #E6E8EB; font-weight: 600; }
+@media (max-width: 820px) { .pitch { grid-template-columns: 1fr; } }
+.stage { overflow-x: auto; border-radius: 14px; border: 1px solid var(--page-line); background: #07080A; padding: 14px; }
+.scale { position: relative; }
+.win { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; transform-origin: 0 0; overflow: hidden; border-radius: 12px; }
+.cmp { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cmp-wrap { overflow-x: auto; }
+.cmp th, .cmp td { text-align: left; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--page-line); vertical-align: top; }
+.cmp th { color: var(--page-dim); font: 600 12px/1 "Instrument Sans", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+.cmp td:first-child { font-weight: 600; white-space: nowrap; }
+.cmp td.dim { color: var(--page-dim); }
+.note { color: var(--page-dim); font-size: 13px; }
+
+/* =============================================================
+   SONAR  (alle Farben, Flächen und Effekte aus Variablen)
+   ============================================================= */
+.sn {
+  --bg: #061A21; --bg2: #0A2530; --bg3: #0F303C; --line: #153F4D; --ink: #D8EEF1; --dim: #7FA3AB;
+  --hi: #FFB547; --hi-ink: #231500; --warn: #FF7A66; --ok: #5FD3A5;
+  --backdrop: radial-gradient(900px 600px at 46% 52%, #0D3341 0%, #061A21 62%);
+  --bar-bg: rgba(6,26,33,.6);
+  --surface: #0A2530; --surface-line: #153F4D; --surface-shadow: none; --blur: none; --radius: 9px;
+  --insp-bg: rgba(10,37,48,.55); --insp-margin: 0; --insp-radius: 0; --insp-border: 1px solid #153F4D;
+  --track: #0B2A35; --tick: #2A5666; --tick-major: #7FA3AB;
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif; --font-num: "Oxanium", sans-serif; --font-mono: "IBM Plex Mono", monospace;
+  background: var(--backdrop); color: var(--ink); font: 400 13px/1.45 var(--font-ui);
+  display: grid; grid-template-columns: 64px 1fr 352px; grid-template-rows: 44px 56px 1fr 30px; position: absolute;
+}
+.sn .titlebar { grid-column: 1 / -1; display: flex; align-items: center; gap: 22px; padding: 0 0 0 16px; border-bottom: 1px solid var(--line); background: var(--bar-bg); }
+.sn .brand { font: 700 14px/1 var(--font-num); letter-spacing: .16em; display: flex; gap: 10px; align-items: center; }
+.sn .brand svg { width: 20px; height: 20px; }
+.sn .navtabs { display: flex; gap: 4px; height: 100%; }
+.sn .navtabs span { display: flex; align-items: center; padding: 0 14px; color: var(--dim); font: 600 12px/1 var(--font-num); letter-spacing: .12em; border-bottom: 2px solid transparent; }
+.sn .navtabs span.on { color: var(--ink); border-bottom-color: var(--hi); }
+.sn .wc { margin-left: auto; display: flex; height: 100%; }
+.sn .wc b { width: 46px; display: grid; place-items: center; color: var(--dim); font-weight: 400; }
+.sn .rail { grid-row: 2 / 5; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 14px; }
+.sn .rail span { width: 42px; height: 42px; border-radius: var(--radius); display: grid; place-items: center; color: var(--dim); }
+.sn .rail span.on { background: var(--surface); color: var(--hi); box-shadow: inset 0 0 0 1px var(--surface-line), var(--surface-shadow); }
+.sn .rail svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sn .toolbar { grid-column: 2 / 4; display: flex; align-items: center; gap: 10px; padding: 0 20px; }
+.sn .drive { display: flex; gap: 10px; align-items: baseline; padding: 8px 14px; border-radius: var(--radius); border: 1px solid var(--surface-line); background: var(--surface); box-shadow: var(--surface-shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); color: var(--dim); font-size: 12px; }
+.sn .drive b { color: var(--ink); font: 600 13px/1 var(--font-num); letter-spacing: .06em; }
+.sn .drive.on { border-color: var(--hi); color: var(--ink); }
+.sn .snap { margin-left: auto; color: var(--dim); font-size: 12px; display: flex; align-items: center; gap: 8px; }
+.sn .snap i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); display: inline-block; }
+.sn .btn { border: 0; border-radius: var(--radius); padding: 10px 16px; font: 700 12px/1 var(--font-num); letter-spacing: .1em; background: var(--hi); color: var(--hi-ink); }
+.sn .center { position: relative; overflow: hidden; }
+.sn .chips { position: absolute; left: 20px; top: 8px; display: flex; flex-wrap: wrap; gap: 6px; width: 250px; z-index: 2; }
+.sn .chips h4 { flex-basis: 100%; margin: 0 0 4px; font: 600 11px/1 var(--font-num); letter-spacing: .14em; color: var(--dim); }
+.sn .chip { display: flex; gap: 7px; align-items: center; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--surface-line); background: var(--surface); box-shadow: var(--surface-shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); color: var(--dim); font: inherit; font-size: 12px; cursor: pointer; }
+.sn .chip i { width: 9px; height: 9px; border-radius: 3px; background: var(--c); display: inline-block; }
+.sn .chip.on { color: var(--ink); border-color: var(--hi); box-shadow: 0 0 0 1px var(--hi) inset; }
+.sn .dial { position: absolute; left: 50%; top: 50%; width: 600px; height: 600px; transform: translate(-48%, -50%); }
+.sn .dial svg { position: relative; width: 100%; height: 100%; overflow: visible; }
+.sn .seg { fill: var(--c); cursor: pointer; transition: opacity .18s, filter .18s; }
+.sn .seg:hover { filter: brightness(1.18); }
+.sn .seg.sel { stroke: var(--hi); stroke-width: 2.5; }
+.sn .track { fill: var(--track); stroke: var(--line); stroke-width: 1; }
+.sn .tick { stroke: var(--tick); stroke-width: 1; }
+.sn .tick.major { stroke: var(--tick-major); stroke-width: 1.4; }
+.sn .tl { fill: var(--dim); font: 11px var(--font-mono); }
+.sn .inner { fill: none; stroke: var(--line); stroke-dasharray: 2 5; }
+.sn .face { fill: none; }
+.sn .hatch-bg { fill: var(--dim); fill-opacity: .14; }
+.sn .hatch-line { fill: var(--dim); }
+.sn .unattr { fill: url(#hatch); stroke: var(--dim); stroke-opacity: .5; }
+.sn .readout { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.sn .readout .big { font: 600 54px/1 var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.sn .readout .lbl { color: var(--dim); margin-top: 6px; font-size: 13px; }
+.sn .readout .sub { margin-top: 14px; font: 600 12px/1 var(--font-num); letter-spacing: .12em; color: var(--hi); }
+.sn .legend { position: absolute; left: 20px; bottom: 16px; color: var(--dim); font-size: 12px; display: flex; gap: 16px; align-items: center; }
+.sn .legend .hatch { width: 22px; height: 10px; border-radius: 2px; background: repeating-linear-gradient(135deg, var(--dim) 0 2px, transparent 2px 5px); }
+.sn .warnline { color: var(--warn); }
+.sn .inspector { margin: var(--insp-margin); border: var(--insp-border); border-radius: var(--insp-radius); background: var(--insp-bg); box-shadow: var(--surface-shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+.sn .inspector h3 { margin: 0; font: 600 11px/1 var(--font-num); letter-spacing: .14em; color: var(--dim); }
+.sn .sel-name { font: 600 24px/1.1 var(--font-num); }
+.sn .sel-path { color: var(--dim); font: 400 12px/1.3 var(--font-mono); margin-top: -8px; }
+.sn .sel-size { display: flex; gap: 12px; align-items: baseline; }
+.sn .sel-size b { font: 600 40px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.sn .sel-size span { color: var(--dim); }
+.sn .mix { display: flex; height: 10px; border-radius: 3px; overflow: hidden; gap: 1px; background: var(--bg3); }
+.sn .mixrows { display: flex; flex-direction: column; gap: 6px; }
+.sn .mixrow { display: grid; grid-template-columns: 10px 1fr auto 54px; gap: 10px; align-items: center; font-size: 12.5px; }
+.sn .mixrow i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+.sn .mixrow em { font: 500 12px/1 var(--font-mono); font-style: normal; font-variant-numeric: tabular-nums; }
+.sn .mixrow u { text-decoration: none; color: var(--dim); text-align: right; font-size: 12px; white-space: nowrap; }
+.sn .files { display: flex; flex-direction: column; }
+.sn .file { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+.sn .file b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sn .file span { color: var(--dim); font: 400 11.5px/1.2 var(--font-mono); grid-column: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sn .file em { grid-row: 1 / 3; grid-column: 2; align-self: center; font: 500 13px/1 var(--font-mono); font-style: normal; font-variant-numeric: tabular-nums; }
+.sn .ghost { margin-top: auto; align-self: flex-start; padding: 9px 14px; border-radius: var(--radius); border: 1px solid var(--surface-line); background: transparent; color: var(--ink); font: 600 12px/1 var(--font-ui); }
+.sn .status { grid-column: 2 / 4; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); }
+
+/* ---------------- Stil 1: GLAS ---------------- */
+.sn[data-style="glas"] {
+  --backdrop:
+    radial-gradient(520px 420px at 14% 18%, rgba(54,120,255,.55), transparent 70%),
+    radial-gradient(640px 520px at 86% 78%, rgba(255,70,170,.42), transparent 70%),
+    radial-gradient(700px 520px at 54% 48%, rgba(0,205,185,.38), transparent 72%),
+    #0A1224;
+  --bar-bg: rgba(255,255,255,.05);
+  --line: rgba(255,255,255,.12); --dim: #A9BBD0; --ink: #F3F8FF;
+  --surface: rgba(255,255,255,.08); --surface-line: rgba(255,255,255,.18);
+  --surface-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 14px 40px rgba(0,0,0,.28);
+  --blur: blur(22px) saturate(170%); --radius: 14px;
+  --insp-bg: rgba(255,255,255,.075); --insp-margin: 10px 14px 10px 0; --insp-radius: 22px; --insp-border: 1px solid rgba(255,255,255,.18);
+  --track: rgba(255,255,255,.06); --tick: rgba(255,255,255,.22); --tick-major: rgba(255,255,255,.6); --hi: #FFC970;
+  --font-ui: "Schibsted Grotesk", system-ui, sans-serif; --font-num: "Schibsted Grotesk", system-ui, sans-serif; --font-mono: "Geist Mono", monospace;
+}
+.sn[data-style="glas"] .seg { fill-opacity: .9; filter: drop-shadow(0 6px 12px rgba(0,0,0,.3)); }
+.sn[data-style="glas"] .seg:hover { filter: drop-shadow(0 6px 14px rgba(0,0,0,.35)) brightness(1.2); }
+.sn[data-style="glas"] .readout .big { font-weight: 500; letter-spacing: -.03em; text-shadow: 0 2px 24px rgba(255,255,255,.25); }
+.sn[data-style="glas"] .rail { background: rgba(255,255,255,.04); }
+.sn[data-style="glas"] .btn { background: linear-gradient(180deg, #FFD488, #FFB347); box-shadow: 0 6px 18px rgba(255,170,60,.35), inset 0 1px 0 rgba(255,255,255,.6); }
+.sn[data-style="glas"] .mix { background: rgba(255,255,255,.1); }
+
+/* ---------------- Stil 2: FLACH ---------------- */
+.sn[data-style="flach"] {
+  --backdrop: #0B3A47; --bar-bg: #072A34; --line: #0B3A47;
+  --bg3: #0D4655; --ink: #FFFFFF; --dim: #8FC1CD; --hi: #FFC53D; --hi-ink: #3A2800; --warn: #FF8A73;
+  --surface: #0F5063; --surface-line: transparent; --surface-shadow: none; --radius: 6px;
+  --insp-bg: #0D4857; --insp-border: 0; --insp-margin: 0; --insp-radius: 0;
+  --track: #0A2F3A; --tick: #3D7684; --tick-major: #8FC1CD;
+  --font-ui: "Instrument Sans", system-ui, sans-serif; --font-num: "Instrument Sans", system-ui, sans-serif; --font-mono: "JetBrains Mono", monospace;
+}
+.sn[data-style="flach"] .track { stroke: none; }
+.sn[data-style="flach"] .readout .big { font-weight: 700; letter-spacing: -.03em; font-size: 62px; }
+.sn[data-style="flach"] .navtabs span, .sn[data-style="flach"] .chips h4, .sn[data-style="flach"] .inspector h3, .sn[data-style="flach"] .brand, .sn[data-style="flach"] .btn, .sn[data-style="flach"] .readout .sub { letter-spacing: .08em; }
+.sn[data-style="flach"] .sel-name { font-weight: 700; }
+.sn[data-style="flach"] .sel-size b { font-weight: 700; }
+.sn[data-style="flach"] .rail { background: #072A34; border-right: 0; }
+.sn[data-style="flach"] .rail span.on { background: var(--hi); color: var(--hi-ink); box-shadow: none; }
+.sn[data-style="flach"] .file { border-top-color: #14606F; }
+.sn[data-style="flach"] .status { border-top: 0; background: #072A34; }
+.sn[data-style="flach"] .titlebar { border-bottom: 0; }
+.sn[data-style="flach"] .chip.on { background: var(--hi); color: var(--hi-ink); box-shadow: none; }
+.sn[data-style="flach"] .chip.on i { outline: 2px solid var(--hi-ink); }
+.sn[data-style="flach"] .drive.on { background: var(--hi); color: var(--hi-ink); border-color: transparent; }
+.sn[data-style="flach"] .drive.on b { color: var(--hi-ink); }
+.sn[data-style="flach"] .seg.sel { stroke: #fff; }
+
+/* ---------------- Stil 3: HARDWARE ---------------- */
+.sn[data-style="hardware"] {
+  --backdrop: radial-gradient(900px 700px at 46% 46%, #23282D 0%, #121518 70%);
+  --bar-bg: linear-gradient(180deg, #2A3036, #1B1F23); --line: #070808; --ink: #E4E9ED; --dim: #8E98A2;
+  --hi: #FFB547; --hi-ink: #2A1A00;
+  --surface: linear-gradient(180deg, #1B1F23, #22272C); --surface-line: #0B0D0F;
+  --surface-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -2px 4px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.04);
+  --radius: 7px; --insp-bg: linear-gradient(180deg, #24292E, #1B1F23); --insp-margin: 10px 12px 10px 0; --insp-radius: 12px; --insp-border: 1px solid #0B0D0F;
+  --track: #0C0E10; --tick: #4B545C; --tick-major: #A9B3BC;
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif; --font-num: "Oxanium", sans-serif; --font-mono: "IBM Plex Mono", monospace;
+}
+.sn[data-style="hardware"] .titlebar { box-shadow: inset 0 -1px 0 rgba(255,255,255,.05); }
+.sn[data-style="hardware"] .rail { background: linear-gradient(90deg, #1D2125, #181B1E); }
+.sn[data-style="hardware"] .btn { background: linear-gradient(180deg, #FFC667, #E69A22); box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 3px rgba(120,60,0,.4), 0 2px 4px rgba(0,0,0,.5); text-shadow: 0 1px 0 rgba(255,255,255,.35); }
+.sn[data-style="hardware"] .drive.on { box-shadow: var(--surface-shadow), 0 0 0 1px var(--hi), 0 0 14px rgba(255,181,71,.25); }
+.sn[data-style="hardware"] .dial::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; background: radial-gradient(circle at 30% 22%, #3D444B 0%, #1A1D21 55%, #0E1012 100%); box-shadow: inset 0 3px 4px rgba(255,255,255,.14), inset 0 -10px 20px rgba(0,0,0,.65), 0 24px 40px rgba(0,0,0,.55); }
+.sn[data-style="hardware"] .dial::after { content: ""; position: absolute; left: 14%; top: 5%; width: 62%; height: 34%; border-radius: 50%; background: linear-gradient(180deg, rgba(255,255,255,.09), transparent); pointer-events: none; }
+.sn[data-style="hardware"] .face { fill: #0B0D0F; stroke: #000; stroke-width: 2; }
+.sn[data-style="hardware"] .seg { filter: drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
+.sn[data-style="hardware"] .readout .big { color: #FFC670; text-shadow: 0 0 18px rgba(255,181,71,.45); }
+.sn[data-style="hardware"] .readout .sub { color: #FFB547; }
+.sn[data-style="hardware"] .inspector h3, .sn[data-style="hardware"] .chips h4 { text-shadow: 0 1px 0 rgba(0,0,0,.8); }
+.sn[data-style="hardware"] .mix { box-shadow: inset 0 1px 3px rgba(0,0,0,.7); background: #0C0E10; }
+.sn[data-style="hardware"] .file { border-top-color: #0B0D0F; box-shadow: 0 -1px 0 rgba(255,255,255,.04); }
+
+/* ---------------- Stil 4: HUD ---------------- */
+.sn[data-style="hud"] {
+  --backdrop: radial-gradient(800px 600px at 46% 50%, #04202A 0%, #02090C 70%);
+  --bar-bg: transparent; --line: rgba(53,242,255,.28); --ink: #D8FBFF; --dim: #5EA9B5;
+  --hi: #FFB547; --hi-ink: #1C1100; --warn: #FF6B5E;
+  --surface: rgba(53,242,255,.05); --surface-line: rgba(53,242,255,.4); --surface-shadow: none; --radius: 2px;
+  --insp-bg: rgba(53,242,255,.04); --insp-margin: 10px 12px 10px 0; --insp-radius: 2px; --insp-border: 1px solid rgba(53,242,255,.35);
+  --track: transparent; --tick: rgba(53,242,255,.3); --tick-major: #35F2FF;
+  --font-ui: "JetBrains Mono", monospace; --font-num: "Oxanium", sans-serif; --font-mono: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+.sn[data-style="hud"]::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(0,0,0,.0) 0 2px, rgba(0,0,0,.22) 2px 3px); mix-blend-mode: multiply; z-index: 9; }
+.sn[data-style="hud"] .seg { fill: color-mix(in srgb, var(--c) 22%, transparent); stroke: var(--c); stroke-width: 1.3; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--c) 60%, transparent)); }
+.sn[data-style="hud"] .seg:hover { fill: color-mix(in srgb, var(--c) 45%, transparent); }
+.sn[data-style="hud"] .seg.sel { fill: color-mix(in srgb, var(--hi) 35%, transparent); stroke: var(--hi); stroke-width: 2; filter: drop-shadow(0 0 8px var(--hi)); }
+.sn[data-style="hud"] .track { stroke: rgba(53,242,255,.3); stroke-dasharray: 3 4; }
+.sn[data-style="hud"] .inner { stroke: rgba(53,242,255,.35); }
+.sn[data-style="hud"] .readout .big { color: #35F2FF; text-shadow: 0 0 22px rgba(53,242,255,.6); font-weight: 400; }
+.sn[data-style="hud"] .readout .sub { color: var(--hi); text-shadow: 0 0 10px rgba(255,181,71,.6); }
+.sn[data-style="hud"] .brand, .sn[data-style="hud"] .navtabs span.on { text-shadow: 0 0 10px rgba(53,242,255,.7); }
+.sn[data-style="hud"] .btn { background: transparent; color: var(--hi); border: 1px solid var(--hi); box-shadow: 0 0 12px rgba(255,181,71,.35), inset 0 0 12px rgba(255,181,71,.15); }
+.sn[data-style="hud"] .inspector::before, .sn[data-style="hud"] .inspector::after { content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid #35F2FF; }
+.sn[data-style="hud"] .inspector { position: relative; gap: 11px; padding: 16px 18px; }
+.sn[data-style="hud"] .inspector::before { left: -1px; top: -1px; border-right: 0; border-bottom: 0; }
+.sn[data-style="hud"] .inspector::after { right: -1px; bottom: -1px; border-left: 0; border-top: 0; }
+.sn[data-style="hud"] .sel-size b, .sn[data-style="hud"] .sel-name { text-shadow: 0 0 14px rgba(53,242,255,.35); }
+.sn[data-style="hud"] .mix { background: rgba(53,242,255,.1); border-radius: 0; }
+.sn[data-style="hud"] .chip { text-transform: uppercase; font-size: 10.5px; letter-spacing: .06em; }
+.sn[data-style="hud"] .hatch-bg { fill: #35F2FF; fill-opacity: .1; }
+.sn[data-style="hud"] .hatch-line { fill: #35F2FF; }
+
+/* ---------------- Stil 5: HELL ---------------- */
+.sn[data-style="hell"] {
+  --backdrop: linear-gradient(180deg, #EEF4F6, #E3ECEF); --bar-bg: rgba(255,255,255,.7); --line: #D3DFE3;
+  --ink: #0E2A33; --dim: #5C7A84; --hi: #E8890C; --hi-ink: #fff; --warn: #D4442F; --ok: #1F9D72; --bg3: #E3ECEF;
+  --surface: #FFFFFF; --surface-line: #D3DFE3; --surface-shadow: 0 1px 2px rgba(10,40,50,.07), 0 10px 28px rgba(10,40,50,.07); --radius: 12px;
+  --insp-bg: #FFFFFF; --insp-margin: 10px 14px 10px 0; --insp-radius: 20px; --insp-border: 1px solid #D3DFE3;
+  --track: #DCE7EB; --tick: #B5C6CC; --tick-major: #5C7A84;
+  --font-ui: "Instrument Sans", system-ui, sans-serif; --font-num: "Instrument Sans", system-ui, sans-serif; --font-mono: "JetBrains Mono", monospace;
+}
+.sn[data-style="hell"] .seg { filter: none; }
+.sn[data-style="hell"] .seg:hover { filter: brightness(.94) saturate(1.2); }
+.sn[data-style="hell"] .seg.sel { stroke: #0E2A33; stroke-width: 2.5; }
+.sn[data-style="hell"] .readout .big { font-weight: 600; letter-spacing: -.035em; font-size: 62px; }
+.sn[data-style="hell"] .rail { background: rgba(255,255,255,.6); }
+.sn[data-style="hell"] .rail span.on { color: var(--hi); }
+.sn[data-style="hell"] .btn { box-shadow: 0 4px 12px rgba(232,137,12,.35); }
+.sn[data-style="hell"] .chip.on { background: #FFF4E2; }
+.sn[data-style="hell"] .mixrow i, .sn[data-style="hell"] .chip i { box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.sn[data-style="hell"] .navtabs span, .sn[data-style="hell"] .brand, .sn[data-style="hell"] .chips h4, .sn[data-style="hell"] .inspector h3 { letter-spacing: .08em; }
+.sn[data-style="hell"] .file { border-top-color: #E3ECEF; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Cleanii Sonar: fünf Stile zur Wahl</h1>
+    <p>Dieselbe Oberfläche in fünf Stilen. Umschalten, mit der Maus über den Ring fahren und Typ-Chips anklicken. Zahlen aus deinem C:-Scan, die Aufteilung innerhalb einzelner Ordner ist zur Illustration.</p>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Stil" id="tabs"></div>
+
+  <div class="pitch">
+    <div><h2 id="s-name"></h2><p id="s-idea"></p></div>
+    <ul class="levers" id="s-list"></ul>
+  </div>
+
+  <div class="stage"><div class="scale"><div class="win">
+    <div class="sn" id="sn" data-style="glas" style="width:1280px;height:800px">
+      <div class="titlebar">
+        <div class="brand"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--hi)"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-opacity=".35"/><path d="M10 2.5a7.5 7.5 0 0 1 7.2 5.4" stroke-linecap="round"/></svg>CLEANII</div>
+        <div class="navtabs"><span class="on">SPEICHER</span><span>LANGSAM-CHECK</span><span>BERICHT</span></div>
+        <div class="wc"><b>–</b><b>▢</b><b>×</b></div>
+      </div>
+      <div class="rail">
+        <span class="on" title="Sonar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 4v4"/></svg></span>
+        <span title="Orte"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></span>
+        <span title="Tempo"><svg viewBox="0 0 24 24"><path d="M3 13h4l3-7 4 12 3-5h4"/></svg></span>
+        <span title="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></span>
+      </div>
+      <div class="toolbar">
+        <div class="drive on"><b>C:</b> 800,65 von 924,15 GB</div>
+        <div class="drive"><b>D:</b> 755,69 von 931,50 GB</div>
+        <div class="snap"><i></i>Stand heute 08:41, Analyse dauerte 14 s</div>
+        <button class="btn" type="button">NEU ANALYSIEREN</button>
+      </div>
+      <div class="center">
+        <div class="chips" id="a-chips"><h4>TYP HERVORHEBEN</h4></div>
+        <div class="dial">
+          <svg viewBox="0 0 560 560" id="a-svg" role="img" aria-label="Laufwerk C: als Ring"></svg>
+          <div class="readout"><div>
+            <div class="big" id="a-ro-big">800,65</div>
+            <div class="lbl" id="a-ro-lbl">GB belegt von 924,15 GB</div>
+            <div class="sub" id="a-ro-sub">13 % FREI</div>
+          </div></div>
+        </div>
+        <div class="legend"><span class="hatch"></span>35,5 GB nicht zugeordnet <span class="warnline">· 595 Bereiche ohne Zugriff</span></div>
+      </div>
+      <aside class="inspector" id="a-insp"></aside>
+      <div class="status"><span>Nur lesender Zugriff. Es wird nichts verändert oder gelöscht.</span><span>2.504.575 Dateien · 499.785 Ordner</span></div>
+    </div>
+  </div></div></div>
+
+  <div class="cmp-wrap">
+    <table class="cmp">
+      <thead><tr><th>Stil</th><th>Charakter</th><th>Aufwand in WPF (Einschätzung)</th></tr></thead>
+      <tbody id="cmp"></tbody>
+    </table>
+  </div>
+  <p class="note">Der Aufwand ist meine Einschätzung aus Erfahrung mit WPF, noch nicht an der App ausprobiert.</p>
+</div>
+
+<script>
+const STYLES = [
+  {k:'glas', n:'Glas', idea:'Milchglas-Flächen über einem farbigen Lichtverlauf. Die Daten schweben, alles wirkt weich und modern. Am meisten „Windows 11“.',
+   lever:'#7CC4FF', items:['Flächen sind halbtransparent mit Unschärfe, Rundungen groß (14 bis 22 px).','Starke Wirkung auf den ersten Blick, verlangt aber ruhigen Hintergrund für gute Lesbarkeit.','Risiko: Kontrast hängt vom Hintergrund ab, auf schwachen Grafikkarten teurer.'],
+   wpf:'Echter Blur nur für das ganze Fenster (Mica oder Acrylic ab Windows 11 über den Fenster-Manager). Einzelne Flächen lassen sich in WPF nicht performant weichzeichnen, dort nur halbtransparent mit Verlauf. Aufwand mittel bis hoch.', short:'Mica/Acrylic nur fürs Fenster, Flächen nur halbtransparent. Mittel bis hoch.', char:'weich, schwebend, modern'},
+  {k:'flach', n:'Flach', idea:'Massive Farbblöcke, keine Schatten, keine Rahmen. Hierarchie entsteht allein durch Farbe, Größe und Schriftgewicht. Klar und schnell lesbar.',
+   lever:'#FFC53D', items:['Große, fette Zahlen, scharfe Kanten, wenig Rundung.','Die Warm-Farbe markiert genau eine Sache: die Auswahl.','Am einfachsten zu pflegen und am robustesten bei jeder Grafikleistung.'],
+   wpf:'Reine Farbflächen und wenige Pinsel, kein Effekt nötig. Aufwand gering.', short:'Reine Farbflächen, keine Effekte. Gering.', char:'klar, fett, grafisch'},
+  {k:'hardware', n:'Hardware', idea:'Wie ein Messgerät aus Metall und Glas: Rahmen, Innenschatten, eingravierte Beschriftung, Anzeige mit Leuchten wie von hinten beleuchtet.',
+   lever:'#FFB547', items:['Der Ring bekommt einen Rahmen mit Glanzlicht, Zahlen glimmen bernsteinfarben.','Hohe Wiedererkennung und ein „teures“ Gefühl, passt zu „Messinstrument“.','Risiko: wirkt schnell altmodisch, wenn es überladen wird.'],
+   wpf:'Viele Verläufe, innere Schatten und Rahmen. Machbar mit Pinseln und eigenen Zeichenbefehlen, aber viel Feinarbeit und später Pflegeaufwand. Aufwand hoch.', short:'Verläufe, Innenschatten, Rahmen. Hoch.', char:'greifbar, wertig, technisch'},
+  {k:'hud', n:'HUD', idea:'Dünne Leuchtlinien, Eckklammern und Rasterlinien wie im Cockpit eines Spiels. Flächen sind nur Umrisse, Farbe leuchtet.',
+   lever:'#35F2FF', items:['Ring und Karten bestehen aus Konturen, Leuchten markiert Auswahl und Hover.','Sehr eigenständig, „AAA-Spiel“-Gefühl, gute Lesbarkeit der Daten.','Risiko: anstrengend bei langer Nutzung, Leuchten sparsam einsetzen.'],
+   wpf:'Konturen und Leuchten per Schatten-Effekt auf einzelnen Elementen. Machbar, Leuchten bei vielen Elementen aber sparsam einsetzen (Leistung). Aufwand mittel.', short:'Konturen, Leuchten per Schatten-Effekt, sparsam. Mittel.', char:'cockpit, leuchtend, scharf'},
+  {k:'hell', n:'Hell', idea:'Heller Arbeitsplatz mit weichen Schatten und viel Weiß. Ruhig, tagsüber gut lesbar, näher an gewohnten Windows-Programmen.',
+   lever:'#E8890C', items:['Weiße Karten auf hellgrauem Grund, große Rundungen, dezente Schatten.','Die Kategorienfarben tragen die Optik, Orange markiert die Auswahl.','Lässt sich später mit dem dunklen Stil als umschaltbares Thema anbieten.'],
+   wpf:'Gleiche Farb-Bausteine wie bei Dunkel, nur andere Werte, dazu weiche Schatten. Aufwand gering bis mittel.', short:'Gleiche Bausteine, andere Werte, weiche Schatten. Gering bis mittel.', char:'ruhig, vertraut, hell'}
+];
+
+/* ---------- Daten ---------- */
+const T = {
+  ai:{n:'KI-Modelle',c:'#65BF9F'}, apps:{n:'Apps und Programme',c:'#75C8E4'}, other:{n:'Sonstiges',c:'#8B9095'},
+  temp:{n:'Temp und Caches',c:'#809B4C'}, system:{n:'System',c:'#586B80'}, images:{n:'Bilder',c:'#D887AE'},
+  archives:{n:'Archive',c:'#D89C67'}, videos:{n:'Videos',c:'#9C84C7'}, installers:{n:'Installer und Abbilder',c:'#C87A70'}
+};
+const typeTotals = [['ai',151.21],['apps',147.86],['other',101.51],['temp',97.84],['system',78.29],['images',47.68],['archives',40.94],['videos',40.86]];
+const CAP = 924.15, USED = 800.65, UNATTR = 35.47;
+const folders = [
+  {id:'users', name:'Users', path:'C:\\Users', gb:529.79, files:1689106, dom:'ai', mix:{ai:131.18, temp:94.64, other:92.53, images:46.76, videos:40.83, installers:32.77, apps:91.08}},
+  {id:'pf', name:'Program Files', path:'C:\\Program Files', gb:48.08, files:293080, dom:'apps', mix:{apps:48.08}},
+  {id:'pd', name:'ProgramData', path:'C:\\ProgramData', gb:46.72, files:127339, dom:'apps', mix:{apps:46.72}},
+  {id:'win', name:'Windows', path:'C:\\Windows', gb:42.31, files:245795, dom:'system', mix:{system:42.31}},
+  {id:'ai', name:'AI', path:'C:\\AI', gb:33.92, files:114564, dom:'ai', mix:{ai:33.92}},
+  {id:'vs', name:'Microsoft VS Code', path:'C:\\Microsoft VS Code', gb:9.94, files:5885, dom:'apps', mix:{apps:9.94}},
+  {id:'es', name:'eSupport', path:'C:\\eSupport', gb:8.84, files:4694, dom:'apps', mix:{apps:8.84}},
+  {id:'x86', name:'Program Files (x86)', path:'C:\\Program Files (x86)', gb:8.66, files:16610, dom:'apps', mix:{apps:8.66}},
+  {id:'root', name:'Dateien im Wurzelordner', path:'C:\\', gb:36.39, files:14, dom:'system', mix:{system:36.39}}
+];
+const topFiles = [
+  ['minimax_h3_fl2va_pruned_int8_convrot.safetensors','…\\Comfy-Desktop\\ComfyUI-Shared\\models\\diffusion_models',19.53],
+  ['gemma-4-26B-A4B-it-Q4_K_M.gguf','…\\.lmstudio\\models\\lmstudio-community',15.64],
+  ['Qwen3.6-27B-Q4_K_M.gguf','…\\.lmstudio\\models\\lmstudio-community',15.41]
+];
+const fmt = (v, d=2) => v.toLocaleString('de-DE', {minimumFractionDigits:d, maximumFractionDigits:d});
+const pct = v => v.toLocaleString('de-DE', {maximumFractionDigits:1}) + ' %';
+const $ = (s, r=document) => r.querySelector(s);
+const el = (t, a={}, h='') => { const e = document.createElement(t); Object.entries(a).forEach(([k,v]) => e.setAttribute(k,v)); e.innerHTML = h; return e; };
+const NS = 'http://www.w3.org/2000/svg';
+const sv = (t, a={}) => { const e = document.createElementNS(NS, t); Object.entries(a).forEach(([k,v]) => e.setAttribute(k,v)); return e; };
+
+/* ---------- Skalierung ---------- */
+function fit() {
+  const stage = $('.stage'), sc = $('.scale'), win = $('.win');
+  const s = Math.max(0.55, Math.min(1, (stage.clientWidth - 28) / 1280));
+  win.style.transform = `scale(${s})`; sc.style.width = 1280 * s + 'px'; sc.style.height = 800 * s + 'px';
+}
+new ResizeObserver(fit).observe(document.body);
+
+/* ---------- Stilwahl ---------- */
+const root = $('#sn');
+function setStyle(k) {
+  const s = STYLES.find(x => x.k === k);
+  root.dataset.style = k;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.k === k)));
+  $('#s-name').textContent = s.n;
+  $('#s-idea').textContent = s.idea;
+  $('#s-list').style.setProperty('--lever', s.lever);
+  $('#s-list').innerHTML = s.items.map(i => `<li>${i}</li>`).join('') + `<li class="wpf"><b>In WPF:</b> ${s.wpf}</li>`;
+}
+STYLES.forEach((s, i) => {
+  const b = el('button', {class:'tab', role:'tab', 'data-k':s.k, 'aria-selected':'false'}, `${s.n} <i>${i + 1}</i>`);
+  b.addEventListener('click', () => setStyle(s.k)); $('#tabs').append(b);
+});
+$('#cmp').innerHTML = STYLES.map(s => `<tr><td>${s.n}</td><td class="dim">${s.char}</td><td class="dim">${s.short}</td></tr>`).join('');
+
+/* ---------- Sonar ---------- */
+(function () {
+  const svg = $('#a-svg'), cx = 280, cy = 280, R0 = 142, R1 = 206, R2 = 214, R3 = 240;
+  const polar = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const arc = (r0, r1, a0, a1) => {
+    const large = (a1 - a0) > Math.PI ? 1 : 0;
+    const [x0,y0] = polar(r1,a0), [x1,y1] = polar(r1,a1), [x2,y2] = polar(r0,a1), [x3,y3] = polar(r0,a0);
+    return `M${x0},${y0}A${r1},${r1} 0 ${large} 1 ${x1},${y1}L${x2},${y2}A${r0},${r0} 0 ${large} 0 ${x3},${y3}Z`;
+  };
+  const start = -Math.PI / 2, full = Math.PI * 2, gap = 0.006;
+  const defs = sv('defs'), pat = sv('pattern', {id:'hatch', width:6, height:6, patternUnits:'userSpaceOnUse', patternTransform:'rotate(45)'});
+  pat.append(sv('rect', {width:6, height:6, class:'hatch-bg'}), sv('rect', {width:2, height:6, class:'hatch-line'}));
+  defs.append(pat); svg.append(defs);
+  svg.append(sv('circle', {cx, cy, r:272, class:'face'}));
+  svg.append(sv('path', {d: arc(R0, R1, start, start + full - 0.0001), class:'track'}));
+  for (let g = 0; g <= 920; g += 10) {
+    const a = start + g / CAP * full, major = g % 100 === 0;
+    const [x1,y1] = polar(R3 + 6, a), [x2,y2] = polar(R3 + (major ? 15 : 10), a);
+    svg.append(sv('line', {x1,y1,x2,y2, class:'tick' + (major ? ' major' : '')}));
+    if (major && g > 0) {
+      const [tx,ty] = polar(R3 + 28, a);
+      const t = sv('text', {x:tx, y:ty + 4, 'text-anchor':'middle', class:'tl'}); t.textContent = g; svg.append(t);
+    }
+  }
+  let acc = 0; const segs = [];
+  folders.forEach(f => {
+    const a0 = start + acc / CAP * full, a1 = start + (acc + f.gb) / CAP * full; acc += f.gb;
+    const p1 = sv('path', {d: arc(R0, R1, a0 + gap, a1 - gap), class:'seg'});
+    p1.style.setProperty('--c', T[f.dom].c); p1.dataset.id = f.id; svg.append(p1);
+    let inner = a0; const parts = [], total = Object.values(f.mix).reduce((s,x) => s + x, 0);
+    Object.entries(f.mix).sort((a,b) => b[1] - a[1]).forEach(([t, v]) => {
+      const span = (a1 - a0) * v / total;
+      const p = sv('path', {d: arc(R2, R3, inner + gap, inner + span - gap), class:'seg'});
+      p.style.setProperty('--c', T[t].c); p.dataset.type = t; svg.append(p); parts.push(p); inner += span;
+    });
+    segs.push({f, p1, parts});
+  });
+  const u0 = start + acc / CAP * full, u1 = start + (acc + UNATTR + 0.47) / CAP * full;
+  svg.append(sv('path', {d: arc(R0, R1, u0 + gap, u1 - gap), class:'unattr'}));
+  svg.append(sv('circle', {cx, cy, r: R0 - 10, class:'inner'}));
+
+  const big = $('#a-ro-big'), lbl = $('#a-ro-lbl'), sub = $('#a-ro-sub');
+  const setRo = (b, l, s) => { big.textContent = b; lbl.textContent = l; sub.textContent = s; };
+  const resetRo = () => setRo('800,65', 'GB belegt von 924,15 GB', '13 % FREI');
+  let filter = null;
+  function applyFilter() {
+    segs.forEach(({f, p1, parts}) => {
+      p1.style.opacity = !filter || f.mix[filter] ? 1 : .16;
+      parts.forEach(p => p.style.opacity = !filter || p.dataset.type === filter ? 1 : .12);
+    });
+    if (filter) setRo(fmt(typeTotals.find(t => t[0] === filter)[1]), T[filter].n, 'GESAMT AUF C:'); else resetRo();
+  }
+  const chips = $('#a-chips');
+  typeTotals.forEach(([k]) => {
+    const c = el('button', {class:'chip', type:'button', style:`--c:${T[k].c}`}, `<i></i>${T[k].n}`);
+    c.addEventListener('click', () => { filter = filter === k ? null : k; chips.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c && !!filter)); applyFilter(); });
+    chips.append(c);
+  });
+  const insp = $('#a-insp');
+  function select(id) {
+    const f = folders.find(x => x.id === id), total = Object.values(f.mix).reduce((s,x) => s + x, 0);
+    segs.forEach(s => s.p1.classList.toggle('sel', s.f.id === id));
+    const m = Object.entries(f.mix).sort((a,b) => b[1] - a[1]);
+    insp.innerHTML = `
+      <h3>AUSGEWÄHLT</h3>
+      <div class="sel-name">${f.name}</div>
+      <div class="sel-path">${f.path}</div>
+      <div class="sel-size"><b>${fmt(f.gb)}</b><span>GB · ${pct(f.gb / USED * 100)} von belegt</span></div>
+      <div class="mix">${m.map(([t,v]) => `<span style="flex:${v};background:${T[t].c}"></span>`).join('')}</div>
+      <div class="mixrows">${m.slice(0,6).map(([t,v]) => `<div class="mixrow" style="--c:${T[t].c}"><i></i><span>${T[t].n}</span><em>${fmt(v)}</em><u>${pct(v / total * 100)}</u></div>`).join('')}</div>
+      ${f.id === 'users' ? `<h3>GRÖSSTE DATEIEN</h3><div class="files">${topFiles.map(([n,p,g]) => `<div class="file"><b>${n}</b><span>${p}</span><em>${fmt(g)} GB</em></div>`).join('')}</div>` : `<h3>DATEIEN</h3><div class="mixrow" style="grid-template-columns:1fr"><span>${f.files.toLocaleString('de-DE')} Dateien</span></div>`}
+      <button class="ghost" type="button">Im Explorer zeigen</button>`;
+  }
+  segs.forEach(({f, p1, parts}) => [p1, ...parts].forEach(p => {
+    p.addEventListener('mouseenter', () => { if (!filter) setRo(fmt(f.gb), f.name, pct(f.gb / CAP * 100) + ' DER KAPAZITÄT'); });
+    p.addEventListener('mouseleave', () => { if (!filter) resetRo(); });
+    p.addEventListener('click', () => select(f.id));
+  }));
+  select('users');
+})();
+setStyle('glas');
+fit();
+</script>

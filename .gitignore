@@ -1,0 +1,11 @@
+# Build-Ausgaben
+bin/
+obj/
+*.user
+.vs/
+
+# Fremdes Programm zur Analyse (nicht von uns, 129 MB)
+Source/
+
+# Lokale Laufzeitdaten
+*.log
