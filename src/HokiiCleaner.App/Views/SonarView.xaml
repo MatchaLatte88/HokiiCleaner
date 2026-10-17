@@ -1,0 +1,316 @@
+<UserControl x:Class="HokiiCleaner.App.Views.SonarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:HokiiCleaner.App.Controls">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="Eyebrow" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDimBrush}" />
+        </Style>
+
+        <Style x:Key="DimText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextDimBrush}" />
+        </Style>
+
+        <!-- Platzhalter-Karte, solange nichts gewaehlt ist -->
+        <Style x:Key="EmptyCard" TargetType="ContentControl" BasedOn="{StaticResource GlassCard}">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Sonar.HasSelection}" Value="False">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Im Scan zeigt die Mitte den Fortschritt, sonst die Werte des Sonar -->
+        <Style x:Key="ScanOnly" TargetType="StackPanel">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsScanning}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="IdleOnly" TargetType="StackPanel">
+            <Setter Property="Visibility" Value="Visible" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsScanning}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="320" />
+            <ColumnDefinition Width="360" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Mitte: Pfad, Typ-Chips, Ring, Hinweise -->
+        <Grid Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="228" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="2,4,0,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Content="↑" Style="{StaticResource SecondaryButton}" Padding="11,5"
+                            ToolTip="Eine Ebene höher" Command="{Binding Places.UpCommand}" />
+                    <ItemsControl Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" ItemsSource="{Binding Places.Crumbs}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="{Binding Name}" Style="{StaticResource CrumbButton}"
+                                            CommandParameter="{Binding}"
+                                            Command="{Binding DataContext.Places.NavigateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                        <Button.Resources>
+                                            <Style TargetType="Button" BasedOn="{StaticResource CrumbButton}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsLast}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Resources>
+                                    </Button>
+                                    <TextBlock Text="›" VerticalAlignment="Center" Margin="2,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource DimText}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsLast}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+
+                <TextBlock Text="TYP HERVORHEBEN" Style="{StaticResource Eyebrow}" Margin="2,14,0,8" />
+                <ItemsControl ItemsSource="{Binding Sonar.Chips}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource TypeChipButton}" CommandParameter="{Binding}"
+                                    Command="{Binding DataContext.Sonar.ToggleFocusCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="9" Height="9" CornerRadius="3" Background="{Binding Brush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Name}" Margin="7,0,0,0" FontSize="{StaticResource FontSizeSmall}" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Platzgewinn-Potenzial: was Windows und Programme bei Bedarf selbst neu anlegen; Klick zeigt den Typ -->
+                <StackPanel Margin="0,20,0,0" Visibility="{Binding HasPotential, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Orientierung, keine Löschempfehlung: Das sind Inhalte, die Windows oder Programme bei Bedarf neu anlegen. Gelöscht wird nur im Bereich AUFRÄUMEN und nur nach Bestätigung.">
+                    <TextBlock Text="PLATZGEWINN-POTENZIAL" Style="{StaticResource Eyebrow}" Margin="2,0,0,4" />
+                    <TextBlock Text="{Binding PotentialTotalText}" FontFamily="{StaticResource DisplayFont}"
+                               FontSize="{StaticResource FontSizeTitle}" Margin="2,0,0,8" Typography.NumeralAlignment="Tabular" />
+                    <ItemsControl ItemsSource="{Binding PotentialItems}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource TypeChipButton}" CommandParameter="{Binding}"
+                                        Command="{Binding DataContext.ShowPotentialCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="9" Height="9" CornerRadius="3" Background="{Binding Brush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Name}" Margin="7,0,0,0" FontSize="{StaticResource FontSizeSmall}" />
+                                        <TextBlock Text="{Binding SizeText}" Margin="7,0,0,0" FontSize="{StaticResource FontSizeSmall}"
+                                                   Typography.NumeralAlignment="Tabular" />
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </StackPanel>
+
+            <Grid Grid.Column="1" Grid.RowSpan="2" Margin="0,0,0,4">
+                <controls:SonarDial Segments="{Binding Sonar.Segments}"
+                                    TotalBytes="{Binding Sonar.TotalBytes}"
+                                    UnattributedBytes="{Binding Sonar.UnattributedBytes}"
+                                    ScanFraction="{Binding Sonar.ScanFraction}"
+                                    SelectedKey="{Binding Sonar.SelectedKey, Mode=TwoWay}"
+                                    HoveredKey="{Binding Sonar.HoveredKey, Mode=TwoWay}"
+                                    FocusCategory="{Binding Sonar.FocusCategory}"
+                                    ActivateCommand="{Binding Sonar.OpenCommand}" />
+
+                <StackPanel Style="{StaticResource IdleOnly}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                            IsHitTestVisible="False">
+                    <TextBlock Text="{Binding Sonar.ReadoutBig}" FontFamily="{StaticResource DisplayFont}"
+                               FontSize="{StaticResource FontSizeHero}" HorizontalAlignment="Center"
+                               Typography.NumeralAlignment="Tabular" />
+                    <TextBlock Text="{Binding Sonar.ReadoutLabel}" Style="{StaticResource DimText}" HorizontalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" MaxWidth="250" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding Sonar.ReadoutSub}" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold"
+                               FontSize="{StaticResource FontSizeSmall}" HorizontalAlignment="Center" Margin="0,12,0,0" />
+                </StackPanel>
+
+                <StackPanel Style="{StaticResource ScanOnly}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                            IsHitTestVisible="False">
+                    <TextBlock Text="{Binding HeroValue}" FontFamily="{StaticResource DisplayFont}"
+                               FontSize="{StaticResource FontSizeTitle}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding HeroCaption}" Style="{StaticResource DimText}" HorizontalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" MaxWidth="250" Margin="0,6,0,0" />
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="1" Margin="2,6,10,0" VerticalAlignment="Bottom">
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding HasUnattributedText, Converter={StaticResource BoolToVis}}">
+                    <Border Width="22" Height="10" CornerRadius="2" VerticalAlignment="Top" Margin="0,4,0,0">
+                        <Border.Background>
+                            <DrawingBrush TileMode="Tile" Viewport="0,0,6,6" ViewportUnits="Absolute"
+                                          Viewbox="0,0,6,6" ViewboxUnits="Absolute" Opacity="0.6">
+                                <DrawingBrush.Transform>
+                                    <RotateTransform Angle="45" />
+                                </DrawingBrush.Transform>
+                                <DrawingBrush.Drawing>
+                                    <GeometryDrawing Brush="{DynamicResource TextDimBrush}">
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="0,0,2,6" />
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                </DrawingBrush.Drawing>
+                            </DrawingBrush>
+                        </Border.Background>
+                    </Border>
+                    <TextBlock Text="{Binding UnattributedText}" Style="{StaticResource DimText}"
+                               FontSize="{StaticResource FontSizeSmall}" Margin="10,0,0,0" TextWrapping="Wrap" MaxWidth="190" />
+                </StackPanel>
+                <TextBlock Text="{Binding IssueText}" Foreground="{DynamicResource WarningBrush}"
+                           FontSize="{StaticResource FontSizeSmall}" Margin="0,4,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding HasIssueText, Converter={StaticResource BoolToVis}}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Info-Karte zum ausgewaehlten Abschnitt -->
+        <ContentControl Grid.Column="1" Style="{StaticResource GlassCard}" Margin="22,0,0,0"
+                        Visibility="{Binding Sonar.HasSelection, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="22,20,22,18">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="AUSGEWÄHLT" Style="{StaticResource Eyebrow}" />
+                    <TextBlock Text="{Binding Sonar.SelName}" FontFamily="{StaticResource DisplayFont}" FontSize="{StaticResource FontSizeTitle}"
+                               FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,8,0,0" />
+                    <TextBlock Text="{Binding Sonar.SelPath}" Style="{StaticResource DimText}" FontFamily="{StaticResource MonoFont}"
+                               FontSize="{StaticResource FontSizeSmall}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Sonar.SelPath}"
+                               Margin="0,4,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <TextBlock Text="{Binding Sonar.SelSizeNumber}" FontFamily="{StaticResource DisplayFont}" FontSize="{StaticResource FontSizeDisplay}"
+                                   Typography.NumeralAlignment="Tabular" />
+                        <TextBlock Text="{Binding Sonar.SelSizeSuffix}" Style="{StaticResource DimText}" VerticalAlignment="Bottom"
+                                   Margin="12,0,0,9" TextTrimming="CharacterEllipsis" MaxWidth="170" />
+                    </StackPanel>
+                    <controls:MeasureBar Compact="True" Margin="0,12,0,12"
+                                         Segments="{Binding Sonar.SelMixSegments}" TotalBytes="{Binding Sonar.SelMixTotal}" />
+                    <ItemsControl ItemsSource="{Binding Sonar.SelMixItems}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="48" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="9" Height="9" CornerRadius="3" Margin="0,0,10,0" VerticalAlignment="Center"
+                                            Background="{Binding Brush}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="{StaticResource FontSizeSmall}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="2" Text="{Binding SizeText}" FontFamily="{StaticResource MonoFont}"
+                                               FontSize="{StaticResource FontSizeSmall}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding ShareText}" Style="{StaticResource DimText}"
+                                               FontSize="{StaticResource FontSizeSmall}" TextAlignment="Right" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Margin="0,16,0,0" VerticalAlignment="Top"
+                            Visibility="{Binding Sonar.HasTopFiles, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="GRÖSSTE DATEIEN" Style="{StaticResource Eyebrow}" Margin="0,0,0,4" />
+                    <ItemsControl ItemsSource="{Binding Sonar.SelTopFiles}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource HairlineBrush}" Padding="0,9"
+                                        ToolTip="{Binding FullPath}" Background="Transparent"
+                                        MouseLeftButtonDown="FileRow_MouseLeftButtonDown">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding DirectoryPath}" Style="{StaticResource DimText}" FontFamily="{StaticResource MonoFont}"
+                                                       FontSize="{StaticResource FontSizeCaption}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontFamily="{StaticResource MonoFont}"
+                                                   VerticalAlignment="Center" Margin="12,0,0,0" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2">
+                    <TextBlock Text="{Binding Sonar.NoticeText}" Foreground="{DynamicResource CriticalBrush}" TextWrapping="Wrap"
+                               FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,8"
+                               Visibility="{Binding Sonar.HasNotice, Converter={StaticResource BoolToVis}}" />
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Öffnen" Style="{StaticResource PrimaryButton}" Padding="16,8" Margin="0,0,8,0"
+                                Command="{Binding Sonar.OpenSelectedCommand}" />
+                        <Button Content="Im Explorer zeigen" Style="{StaticResource SecondaryButton}" Padding="14,8"
+                                Command="{Binding Sonar.RevealSelectedCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </ContentControl>
+
+        <ContentControl Grid.Column="1" Style="{StaticResource EmptyCard}" Margin="22,0,0,0">
+            <TextBlock Text="Wähle einen Abschnitt im Ring." Style="{StaticResource DimText}" TextWrapping="Wrap"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24" />
+        </ContentControl>
+    </Grid>
+</UserControl>

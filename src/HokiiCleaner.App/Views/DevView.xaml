@@ -1,0 +1,99 @@
+<UserControl x:Class="HokiiCleaner.App.Views.DevView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="Eyebrow" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDimBrush}" />
+        </Style>
+
+        <Style x:Key="DimText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextDimBrush}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Kopf: Erklaerung, Filter, Sammelaktionen -->
+        <Grid Grid.Row="0" Margin="0,2,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="ENTWICKLER-FUNDE" Style="{StaticResource Eyebrow}" />
+                <TextBlock Text="{Binding Dev.SummaryText}" Margin="0,4,0,0" FontSize="{StaticResource FontSizeSubtitle}"
+                           Typography.NumeralAlignment="Tabular" TextWrapping="Wrap" />
+                <TextBlock Style="{StaticResource DimText}" FontSize="{StaticResource FontSizeSmall}" TextWrapping="Wrap" MaxWidth="900"
+                           Margin="0,4,0,0"
+                           Text="Ordner wie node_modules, Python-Umgebungen und Build-Ausgaben, die dein Projekt jederzeit neu erzeugen kann. Erkannt werden sie an Ordnername und Projektdateien daneben; Ordner von Editor-Erweiterungen und Programmen sind ausgenommen. Vormerken legt sie nur in den Auswahlkorb." />
+                <TextBlock Text="{Binding Dev.ErrorText}" Foreground="{DynamicResource CriticalBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
+                           Visibility="{Binding Dev.HasError, Converter={StaticResource BoolToVis}}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="PROJEKT UNVERÄNDERT SEIT" Style="{StaticResource Eyebrow}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <RadioButton GroupName="DevIdle" Content="egal" Style="{StaticResource FilterChip}" Margin="0,0,4,0" IsChecked="{Binding Dev.Idle0, Mode=TwoWay}" />
+                    <RadioButton GroupName="DevIdle" Content="30 Tagen" Style="{StaticResource FilterChip}" Margin="0,0,4,0" IsChecked="{Binding Dev.Idle30, Mode=TwoWay}" />
+                    <RadioButton GroupName="DevIdle" Content="90 Tagen" Style="{StaticResource FilterChip}" Margin="0,0,4,0" IsChecked="{Binding Dev.Idle90, Mode=TwoWay}" />
+                    <RadioButton GroupName="DevIdle" Content="180 Tagen" Style="{StaticResource FilterChip}" Margin="0,0,4,0" IsChecked="{Binding Dev.Idle180, Mode=TwoWay}" />
+                    <RadioButton GroupName="DevIdle" Content="1 Jahr" Style="{StaticResource FilterChip}" IsChecked="{Binding Dev.Idle365, Mode=TwoWay}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                    <Button Content="Alle vormerken" Style="{StaticResource SecondaryButton}" Padding="12,6" Margin="0,0,8,0"
+                            Command="{Binding Dev.MarkAllCommand}" ToolTip="Merkt alle gezeigten Ordner für den Papierkorb vor" />
+                    <Button Content="Vormerkung aufheben" Style="{StaticResource SecondaryButton}" Padding="12,6"
+                            Command="{Binding Dev.ClearMarksCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <ContentControl Grid.Row="1" Style="{StaticResource GlassCard}" />
+        <ListBox Grid.Row="1" Margin="8,10,8,10" Style="{StaticResource PlainList}"
+                 ItemContainerStyle="{StaticResource CategoryRowItem}"
+                 ItemsSource="{Binding Dev.Rows}"
+                 Visibility="{Binding Dev.HasRows, Converter={StaticResource BoolToVis}}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox Style="{StaticResource MarkCheckBox}" Margin="0,0,14,0" VerticalAlignment="Top"
+                                  IsChecked="{Binding IsMarked, Mode=TwoWay}" IsEnabled="{Binding CanMark}"
+                                  ToolTip="{Binding MarkToolTip}" />
+                        <StackPanel Grid.Column="1" ToolTip="{Binding FullPath}">
+                            <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding FullPath}" Style="{StaticResource DimText}" FontFamily="{StaticResource MonoFont}"
+                                       FontSize="{StaticResource FontSizeCaption}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                            <TextBlock Text="{Binding Regenerate}" Style="{StaticResource DimText}" FontSize="{StaticResource FontSizeSmall}"
+                                       TextWrapping="Wrap" Margin="0,4,0,0" />
+                            <TextBlock Text="{Binding Caution}" Foreground="{DynamicResource WarningBrush}" FontSize="{StaticResource FontSizeSmall}"
+                                       TextWrapping="Wrap" Margin="0,2,0,0" Visibility="{Binding HasCaution, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="18,0,0,0" MinWidth="130">
+                            <TextBlock Text="{Binding SizeText}" TextAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                            <TextBlock Text="{Binding DetailText}" Style="{StaticResource DimText}" FontSize="{StaticResource FontSizeCaption}"
+                                       TextAlignment="Right" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="520"
+                    Visibility="{Binding Dev.ShowEmpty, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="Nichts gefunden." FontSize="{StaticResource FontSizeSubtitle}" HorizontalAlignment="Center" />
+            <TextBlock Style="{StaticResource DimText}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"
+                       Text="Im Scan gibt es keine solchen Ordner, oder der Filter oben blendet alle aus. Ein längerer Zeitraum oder &quot;egal&quot; zeigt mehr." />
+        </StackPanel>
+    </Grid>
+</UserControl>

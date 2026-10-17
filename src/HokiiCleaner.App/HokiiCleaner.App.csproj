@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HokiiCleaner.Core\HokiiCleaner.Core.csproj" />
+    <ProjectReference Include="..\HokiiCleaner.Actions\HokiiCleaner.Actions.csproj" />
+  </ItemGroup>
+
+</Project>

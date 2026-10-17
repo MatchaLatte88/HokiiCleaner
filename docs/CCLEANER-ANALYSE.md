@@ -1,8 +1,8 @@
-# CCleaner 6.41 – Funktionsinventar und Vergleich mit Cleanii
+# CCleaner 6.41 – Funktionsinventar und Vergleich mit HokiiCleaner
 
-Stand: 2026-10-16 · Zweck: Feature-Ideen für Cleanii sammeln und gegen den Ist-Stand abgleichen.
+Stand: 2026-10-16 · Zweck: Feature-Ideen für HokiiCleaner sammeln und gegen den Ist-Stand abgleichen.
 
-**Rahmen (aus `KONZEPT.md`):** Übernommen werden nur Funktionsideen und Abläufe. Kein Code, keine Assets, keine Regeldatenbank, keine Texte. Cleanii ist in Phase 1 rein lesend, lokal, ohne Netzwerkzugriff und ohne Telemetrie.
+**Rahmen (aus `KONZEPT.md`):** Übernommen werden nur Funktionsideen und Abläufe. Kein Code, keine Assets, keine Regeldatenbank, keine Texte. HokiiCleaner ist in Phase 1 rein lesend, lokal, ohne Netzwerkzugriff und ohne Telemetrie.
 
 **Lesehilfe – Beleggrade**
 
@@ -22,14 +22,14 @@ Stand: 2026-10-16 · Zweck: Feature-Ideen für Cleanii sammeln und gegen den Ist
 
 1. **REA `inspect_pe_resources`** auf `Lang\lang-1031.dll` (Deutsch): 245 String-Tabellen, vollständig (`examined_entries` 491, Status `complete`). Evidence-ID `ev_1f3ce1550726d0213d207c37c893efae368dea3edbd8d8100168c51eb4252852`, SHA-256 der Datei `766af5fa17a56e2e3771762a811685cea165201a3e98a647e35c1b248c957b92`. Die Tabellen habe ich anhand der von REA belegten Dateibereiche selbst dekodiert (16 Strings je Block, ID = (Block − 1) × 16 + Index). Ergebnis: **2.972 UI-Texte, alle gelesen**.
 2. **Eigene String- und Importsuche** (schlichtes Skript, ASCII und UTF-16) in `CCleaner64.exe`, `CCleanerDU.dll`, `CCleanerPerformanceOptimizer.dll`, `…Service.exe`, `CCleanerReactivator.dll/.exe`. Das ist **keine REA-Evidence**, sondern Textfunde.
-3. **Cleanii-Seite:** `docs/KONZEPT.md`, `CategoryRules.cs`, `ScanSession.cs` und der bisherige Gesprächsstand.
+3. **HokiiCleaner-Seite:** `docs/KONZEPT.md`, `CategoryRules.cs`, `ScanSession.cs` und der bisherige Gesprächsstand.
 
 **Grenzen – bitte mitlesen**
 
 - **Kein Disassembler.** REA hat hier keinen nativen Provider (Ghidra nicht konfiguriert, Hopper/IDA nicht nutzbar). Ich habe nichts dafür installiert. Folglich gibt es **keine Dekompilierung und keine Kontrollflussanalyse**; alles zu „wie funktioniert es intern“ stützt sich auf Strings, Importe und Klassennamen.
 - **Nur Deutsch gelesen.** Ein Text in der Liste beweist nicht, dass die Funktion in 6.41 aktiv, kostenlos oder erreichbar ist. Einige Texte sind erkennbar veraltet (z. B. Text-ID 305 „Win95/NT4“, 122 „Windows XP und Vista“).
 - **Keine Laufzeitbeobachtung.** Wie sich die Oberfläche tatsächlich verhält, ist nicht gesehen.
-- **Texte sind Belege, keine Vorlage.** Ich zitiere nur Funktionsnamen; eigene Formulierungen für Cleanii sind nötig.
+- **Texte sind Belege, keine Vorlage.** Ich zitiere nur Funktionsnamen; eigene Formulierungen für HokiiCleaner sind nötig.
 
 **Korrektur einer früheren Annahme:** `CCleanerDU.dll` ist **nicht** die Festplattenanalyse, sondern die „Driver Updater extension“ [B: Versionsinfo, Importe `DiInstallDriverW`, `SRSetRestorePointW`, Klassennamen `DriverUpdater::…`].
 
@@ -112,13 +112,13 @@ Smart Cleaning (Browser automatisch nach dem Schließen bereinigen, Hinweis wenn
 
 ---
 
-## 4. Vergleich mit Cleanii
+## 4. Vergleich mit HokiiCleaner
 
-Cleanii-Stand laut `KONZEPT.md` und dem aktuellen Code (Orte-Ansicht als Mini-Browser, 145 Tests).
+HokiiCleaner-Stand laut `KONZEPT.md` und dem aktuellen Code (Orte-Ansicht als Mini-Browser, 145 Tests).
 
-### 4.1 Wo Cleanii bereits weiter oder anders ist
+### 4.1 Wo HokiiCleaner bereits weiter oder anders ist
 
-| Thema | CCleaner | Cleanii |
+| Thema | CCleaner | HokiiCleaner |
 |---|---|---|
 | Platzanalyse | Dateiliste nach 7 Kategorien [B/I] | Ordnerbaum, Treemap, Sonar, Zusammensetzung je Ordner nach 14 Typen, Spur zum größten Inhalt, Einzeldateien je Ordner |
 | Scan-Genauigkeit | [U] | Belegung auf dem Datenträger, Hardlinks (WinSxS), Reparse Points nicht verfolgt, Cloud-Platzhalter 0 Byte, nicht lesbare Pfade sichtbar |
@@ -130,7 +130,7 @@ Cleanii-Stand laut `KONZEPT.md` und dem aktuellen Code (Orte-Ansicht als Mini-Br
 
 **Priorität A – lesend, nutzt vorhandene Daten, schließt bekannte Grenzen**
 
-| # | Idee | Beleg bei CCleaner | Stand Cleanii | Hinweis |
+| # | Idee | Beleg bei CCleaner | Stand HokiiCleaner | Hinweis |
 |---|---|---|---|---|
 | A1 | **Zeitstempel und Attribute** je Datei/Ordner (Änderung, Erstellung, Zugriff) mit Spalte und Sortierung; Filter „groß und lange nicht geändert“ | Disk Analyzer: Zeit- und Attributspalten [B] | fehlt; `KONZEPT.md` nennt es als Grenze | Der Scanner nutzt `FileSystemEnumerable<…>/FileSystemEntry` (`ScanSession.cs`); dieser Typ bietet die Zeiten direkt aus der Auflistung. **Vor Umsetzung prüfen.** Zugriffszeit ist auf NTFS oft deaktiviert und daher unzuverlässig. |
 | A2 | **Export** von Listen (Text/CSV/JSON) | „In Textdatei speichern“ in Cleaner und Disk Analyzer [B] | Meilenstein 5, offen | Im Konzept als erlaubte Phase-1-Funktion vorgesehen. |
@@ -145,8 +145,8 @@ Cleanii-Stand laut `KONZEPT.md` und dem aktuellen Code (Orte-Ansicht als Mini-Br
 |---|---|---|---|
 | B1 | **Duplikat-Bericht** (nur melden): Größe, dann Teil-Hash, dann Voll-Hash; Ausschlüsse (0 Byte, System, versteckt), Mindestgröße, gewählter Ordner, Abbruch | Kriterien und Ignorierliste [B]; Algorithmus [U] | Rechenintensiv, nur auf Abruf. Löschen frühestens in Phase 2. |
 | B2 | **Mehr Autostart-Quellen** im Langsam-Check: Kontextmenü-/Shell-Erweiterungen, Browser-Erweiterungen (Anzahl) | Reiter „Kontextmenü“, „Browser“ [B] | Machbarkeit lesend und ohne Admin nicht geprüft [U]. |
-| B3 | **Einfluss-Einstufung** (niedrig/mittel/hoch) für Autostart- und Hintergrundeinträge, aus eigenen Messwerten (CPU, I/O, RAM in der Stichprobe) statt aus einer Datenbank | Spalte „Einfluss“ [B]; Quelle bei CCleaner [U] | Passt zur Cleanii-Haltung „Messwert, Schwelle, Quelle“. |
-| B4 | **Installierte Programme nach Größe**: Registry-Einträge mit Installationsort, verknüpft mit den Ordnergrößen aus dem Scan | Deinstallieren-Liste mit Größe [B] | Registry-Größenfeld ist oft leer; die Verknüpfung mit dem Scanbaum ist ein Vorteil von Cleanii. |
+| B3 | **Einfluss-Einstufung** (niedrig/mittel/hoch) für Autostart- und Hintergrundeinträge, aus eigenen Messwerten (CPU, I/O, RAM in der Stichprobe) statt aus einer Datenbank | Spalte „Einfluss“ [B]; Quelle bei CCleaner [U] | Passt zur HokiiCleaner-Haltung „Messwert, Schwelle, Quelle“. |
+| B4 | **Installierte Programme nach Größe**: Registry-Einträge mit Installationsort, verknüpft mit den Ordnergrößen aus dem Scan | Deinstallieren-Liste mit Größe [B] | Registry-Größenfeld ist oft leer; die Verknüpfung mit dem Scanbaum ist ein Vorteil von HokiiCleaner. |
 | B5 | **Wiederherstellungspunkte / Schattenkopien-Speicher** als Platzverbraucher | Systemwiederherstellung [B] | Lesbarkeit ohne Admin [U]. |
 | B6 | **Treiberliste lokal** (Datum, Version, ohne Online-Abgleich) | Spalten des Driver Updater [B] | Konzept nennt „Treiberalter“, umgesetzt nur Grafiktreiber. |
 
@@ -162,7 +162,7 @@ Cleanii-Stand laut `KONZEPT.md` und dem aktuellen Code (Orte-Ansicht als Mini-Br
 
 ### 4.3 Abgleich der Kategorie-Regeln (`CategoryRules.cs` gegen die Windows-Liste 3101–3156)
 
-| CCleaner-Option | Cleanii-Regel heute |
+| CCleaner-Option | HokiiCleaner-Regel heute |
 |---|---|
 | Papierkorb | vorhanden (`$Recycle.Bin`) |
 | Temporäre Dateien (Windows, Benutzer) | vorhanden (`Windows\Temp`, `…\AppData\Local\Temp`) |
@@ -180,7 +180,7 @@ Cleanii-Stand laut `KONZEPT.md` und dem aktuellen Code (Orte-Ansicht als Mini-Br
 | Ereignisprotokolle | fallen unter `Windows` → „System“ |
 | CHKDSK-Fragmente (`FOUND.*`) | **keine Regel** |
 
-Die Pfade der „keine Regel“-Zeilen sind Windows-Kenntnis, nicht aus CCleaner belegt. Vor dem Eintragen am Testrechner prüfen und Mengen messen, ob sich die Regel lohnt. Ein kuratierter Katalog wie bei CCleaner (127 App-Texte) ist wegen der Grenze „keine Regeldatenbank“ ausgeschlossen; sinnvoller sind **heuristische Funde** (Ordnernamen wie `Cache`, `logs`), wie sie Cleanii schon nutzt.
+Die Pfade der „keine Regel“-Zeilen sind Windows-Kenntnis, nicht aus CCleaner belegt. Vor dem Eintragen am Testrechner prüfen und Mengen messen, ob sich die Regel lohnt. Ein kuratierter Katalog wie bei CCleaner (127 App-Texte) ist wegen der Grenze „keine Regeldatenbank“ ausgeschlossen; sinnvoller sind **heuristische Funde** (Ordnernamen wie `Cache`, `logs`), wie sie HokiiCleaner schon nutzt.
 
 ### 4.4 Nicht übernehmen
 
@@ -190,8 +190,8 @@ Die Pfade der „keine Regel“-Zeilen sind Windows-Kenntnis, nicht aus CCleaner
 | Software-/Driver-Updater | brauchen Netzwerk, Definitionsserver und Installationsrechte; widersprechen „lokal, kein Netzwerk“. |
 | Performance-Optimierer („Schlafmodus“) | ändert Dienste, Aufgaben, Registry (Phase 1 verbietet). Die **Analyse-Hälfte** (Liste, Typ des Eintrags, Einfluss, Folgenhinweis) ist als B3/A5 übernehmbar. |
 | Festplatten-Wiper, sicheres Löschen | zerstörend; nur als späteres Thema mit SSD-Warnung (C5). |
-| Smart Cleaning, Zeitplan, Dienst im Hintergrund | dauerhafter Prozess mit Rechten; nicht Ziel von Cleanii. |
-| Analytics, Datenfreigabe, Drittangebote, Testversion, Rabattbanner, Browser-Werbung | Gegenposition zu Cleanii. |
+| Smart Cleaning, Zeitplan, Dienst im Hintergrund | dauerhafter Prozess mit Rechten; nicht Ziel von HokiiCleaner. |
+| Analytics, Datenfreigabe, Drittangebote, Testversion, Rabattbanner, Browser-Werbung | Gegenposition zu HokiiCleaner. |
 | Gesamtnote „Zustand des PCs“ als Farbfläche | widerspricht „Farbe nur bei Abweichung“; allenfalls als nüchterne Kennzahl („1 Befund braucht Aufmerksamkeit“ existiert bereits). |
 
 ---
@@ -200,7 +200,7 @@ Die Pfade der „keine Regel“-Zeilen sind Windows-Kenntnis, nicht aus CCleaner
 
 1. **A1 Zeitstempel + A2 Export + A3 Suche** – schließen die im Konzept genannten Grenzen der Orte-Ansicht und bauen auf vorhandenen Daten auf.
 2. **A4 Platzgewinn-Potenzial + A5 Folgenhinweise + A6 Regel-Lücken** – Nutzen für „Was belegt meine Festplatte?“ ohne neue Messungen.
-3. **B4 Programme nach Größe + B3 Einfluss-Einstufung** – verbinden Scan und Langsam-Check, das ist Cleaniis eigener Vorteil.
+3. **B4 Programme nach Größe + B3 Einfluss-Einstufung** – verbinden Scan und Langsam-Check, das ist HokiiCleaners eigener Vorteil.
 4. **B1 Duplikat-Bericht** – größter Einzelgewinn bei Platzproblemen, aber rechenintensiv und eigenes Design nötig.
 5. B2, B5, B6 nach Machbarkeitsprüfung.
 
@@ -240,7 +240,7 @@ Alle Kandidaten der Prioritäten A und B sind umgesetzt; Priorität C und die Li
 
 ## 8. Anhang – Reproduktion und Hashes
 
-Auswerteskripte, die dekodierte Textliste und die String-Auszüge liegen **außerhalb dieses Repos** in `D:\Workspace\Cleanii-RE\analysis\` (Herstellertexte gehören nicht ins Cleanii-Repo).
+Auswerteskripte, die dekodierte Textliste und die String-Auszüge liegen **außerhalb dieses Repos** in `D:\Workspace\Cleanii-RE\analysis\` (Herstellertexte gehören nicht ins HokiiCleaner-Repo).
 
 | Datei | SHA-256 |
 |---|---|
